@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>World Cup Prediction Game Presentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0e0808; --bgGrad1:#1a0d0a; --panel:#171110; --panelHi:#1e1614;
+    --border:#2c211d; --gold:#d6b14e; --goldSoft:#e7c66b; --goldDim:#8a7330;
+    --maroon1:#4a1410; --maroon2:#2a0d0b; --cream:#f5efe6; --muted:#9a8c80;
+    --mutedDim:#6e635b; --green:#3f9d56; --greenBg:#163a1f; --red:#c0473f;
+    --disp:'Quicksand',sans-serif; --body:'DM Sans',sans-serif;
+    --zh:'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif; --mono:'DM Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(120% 80% at 50% 0%, var(--bgGrad1) 0%, var(--bg) 55%);
+    color:var(--cream); font-family:var(--body); min-height:100vh; position:relative;
+  }
+  /* background art layer */
+  #bg{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden;}
+  #bg svg{position:absolute; inset:0; width:100%; height:100%;}
+  #bg::after{content:""; position:absolute; inset:0; background:
+    radial-gradient(135% 100% at 50% 0%, transparent 0%, transparent 58%, var(--bg) 97%),
+    linear-gradient(180deg, transparent 74%, var(--bg) 100%);}
+  .wrap{position:relative; z-index:1;}
+
+  /* hero */
+  .hero{position:relative; overflow:hidden; text-align:center; padding:30px 20px 18px;
+    background:linear-gradient(160deg,var(--maroon1) 0%,var(--maroon2) 60%,var(--bg) 100%);
+    border-bottom:1px solid rgba(138,115,48,.45);}
+  .hero .tex{position:absolute; inset:0; pointer-events:none;
+    background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.03) 0 1px,transparent 1px 22px);}
+  .hero .in{position:relative;}
+  .eyebrow{margin:0 0 6px; color:var(--gold); font-size:12px; font-weight:700; letter-spacing:6px; font-family:var(--disp);}
+  .hero h1{margin:0; font-size:32px; font-weight:700; font-family:var(--disp); color:var(--cream); display:flex; align-items:center; justify-content:center; gap:10px;}
+  .hero .sub{margin:6px 0 0; color:var(--muted); font-size:13.5px;}
+  .legend{display:flex; gap:7px; justify-content:center; margin-top:8px; flex-wrap:wrap;}
+  .legend span{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted);}
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
+
+  /* tabs */
+  .tabs{position:sticky; top:0; z-index:20; display:flex; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    background:rgba(14,8,8,.96); backdrop-filter:blur(10px); border-bottom:1px solid var(--border);}
+  .tab{flex:1 0 auto; min-width:120px; padding:14px 16px; cursor:pointer; border:none; background:transparent;
+    color:var(--muted); font-weight:600; font-size:13.5px; font-family:var(--disp);
+    display:flex; align-items:center; justify-content:center; gap:7px; transition:all .25s;}
+  .tab .ic{font-size:15px;}
+  .tab.active{background:linear-gradient(180deg,var(--gold),var(--goldDim)); color:#241a05; font-weight:800;
+    border-top-left-radius:10px; border-top-right-radius:10px;}
+
+  .content{padding:26px 14px 70px;}
+  .panel{display:none;} .panel.show{display:block;}
+
+  .sec{text-align:center; margin-bottom:22px;}
+  .sec .eb{margin:0; color:var(--gold); font-size:11px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase;}
+  .sec h2{margin:4px 0 0; color:var(--cream); font-family:var(--disp); font-weight:700; font-size:25px;}
+  .sec .sb{margin:6px 0 0; color:var(--muted); font-size:13px;}
+
+  .maxw-pr{max-width:840px; margin:0 auto;}
+  .maxw-me{max-width:1080px; margin:0 auto;}
+  .maxw-gp{max-width:920px; margin:0 auto;}
+  .maxw-ko{max-width:1000px; margin:0 auto;}
+
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:16px;}
+  .promptbox{background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:22px;
+    font-family:var(--mono); font-size:12.5px; line-height:1.8; color:#d8cdbf; white-space:pre-wrap;
+    max-height:560px; overflow-y:auto;}
+  .chips{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;}
+  .chip{display:flex; align-items:center; gap:7px; padding:6px 13px; border-radius:8px; background:var(--panelHi);}
+  .chip span.nm{font-size:12px; font-weight:700;}
+  .why{margin-top:16px; padding:15px; background:#2a1d0c; border:1px solid rgba(138,115,48,.55); border-radius:10px;}
+  .why p{margin:0; color:var(--goldSoft); font-size:12px; line-height:1.65;}
+
+  .mgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:18px;}
+  .mcard{background:var(--panel); border-radius:14px; padding:20px; border:1px solid var(--border); position:relative; overflow:hidden;}
+  .mcard .top{position:absolute; top:0; left:0; right:0; height:3px;}
+  .mhead{display:flex; align-items:center; gap:9px; margin-bottom:13px;}
+  .mhead h3{margin:0; font-family:var(--disp); font-size:17px; font-weight:700;}
+  .pill{padding:3px 9px; border-radius:6px; font-size:10.5px; font-weight:800; letter-spacing:.6px; white-space:nowrap;}
+  .bars{display:flex; flex-direction:column; gap:5px;}
+  .bar{display:flex; align-items:center; gap:8px;}
+  .bar .lbl{font-size:10.5px; color:var(--muted); width:150px; text-align:right; flex-shrink:0;}
+  .bar .track{flex:1; background:var(--bg); border-radius:4px; height:18px; position:relative; overflow:hidden;}
+  .bar .fill{height:100%; border-radius:4px;}
+  .bar .val{position:absolute; right:6px; top:1px; font-size:10.5px; color:var(--cream); font-weight:700; font-family:var(--mono);}
+  .approach{margin-top:13px; padding:11px; background:var(--bg); border-radius:8px;}
+  .approach p{margin:0; color:var(--muted); font-size:11.5px; line-height:1.6;}
+  .note{margin:9px 0 0; color:var(--goldSoft); font-size:11.5px; line-height:1.55;}
+  .glance{margin-top:20px; background:var(--panel); border-radius:14px; padding:18px; border:1px solid var(--border);}
+  .glance h3{margin:0 0 12px; color:var(--gold); font-family:var(--disp); font-weight:700; font-size:15px;}
+  .ggrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:11px;}
+  .gitem{background:var(--bg); border-radius:8px; padding:12px;}
+  .gitem p.k{margin:0; color:var(--muted); font-size:10.5px;}
+  .gitem p.v{margin:4px 0 0; color:var(--cream); font-size:13.5px; font-weight:700;}
+
+  /* group nav + blocks */
+  .gnav{position:sticky; top:50px; z-index:5; background:rgba(14,8,8,.95); backdrop-filter:blur(8px);
+    padding:10px 4px; margin-bottom:14px; border-bottom:1px solid var(--border);
+    display:flex; flex-wrap:wrap; gap:6px; justify-content:center;}
+  .gbtn{width:38px; height:34px; border-radius:8px; cursor:pointer; background:var(--panel);
+    color:var(--muted); border:1px solid var(--border); font-weight:800; font-family:var(--disp); font-size:14px; transition:all .2s;}
+  .gbtn.active{background:linear-gradient(135deg,var(--gold),var(--goldDim)); color:#241a05; border:none;}
+
+  .gblock{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px 16px 16px; margin-bottom:20px; scroll-margin-top:96px;}
+  .ghead{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .gbadge{width:34px; height:34px; border-radius:9px; background:linear-gradient(135deg,var(--gold),var(--goldDim));
+    color:#241a05; font-weight:800; font-family:var(--disp); font-size:18px; display:flex; align-items:center; justify-content:center;}
+  .glabel{color:var(--muted); font-family:var(--disp); font-weight:700; font-size:14px; letter-spacing:3px;}
+  .gflags{margin-left:auto; font-size:18px; letter-spacing:1px;}
+
+  .tblwrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px; border:1px solid var(--border);}
+  table{width:100%; min-width:520px; border-collapse:collapse;}
+  th,td{text-align:left;}
+  thead th{padding:9px 10px; background:var(--bg); font-size:11.5px; font-weight:800; font-family:var(--disp);}
+  thead th.pos{color:var(--mutedDim); font-size:10px; font-weight:700; letter-spacing:1px; position:sticky; left:0; z-index:1;}
+  tbody td{padding:9px 10px; color:var(--cream); font-size:12.5px; font-weight:600; border-top:1px solid var(--border); white-space:nowrap;}
+  tbody td.poscell{font-weight:800; font-size:11px; background:var(--panelHi); position:sticky; left:0;}
+  tbody td.thirdlbl{color:var(--mutedDim); font-size:9.5px; font-weight:700; background:var(--panelHi); position:sticky; left:0;}
+  td .fl{margin-right:5px;}
+
+  .comments{display:flex; flex-direction:column; gap:7px; margin-top:13px;}
+  .crow{display:flex; gap:9px; align-items:flex-start; padding:9px 12px; background:var(--bg); border-radius:10px;}
+  .crow .who{font-size:10.5px; font-weight:800; font-family:var(--disp); min-width:62px; padding-top:2px; flex-shrink:0;}
+  .crow p{margin:0; color:var(--cream); font-size:13.5px; line-height:1.65; font-family:var(--zh); font-weight:500;}
+
+  /* knockout */
+  .kcard{margin-bottom:20px; background:var(--panel); border-radius:14px; padding:20px; border:1px solid var(--border);}
+  .kcard h3{margin:0 0 14px; font-family:var(--disp); font-weight:700; font-size:18px;}
+  .ktally{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
+  .tchip{border-radius:9px; padding:7px 13px; display:flex; align-items:center; gap:8px;}
+  .tchip .nm{color:var(--cream); font-size:14.5px; font-weight:800; font-family:var(--disp);}
+  .kgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px;}
+  .kmodel{background:var(--bg); border-radius:10px; padding:12px;}
+  .kmodel .r{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;}
+  .kmodel .r .ml{font-size:12px; font-weight:700; font-family:var(--disp);}
+  .kmodel .r .pk{color:var(--cream); font-size:13.5px; font-weight:800; font-family:var(--disp);}
+  .kmodel p{margin:0; color:var(--muted); font-size:11px; line-height:1.55;}
+
+  .footer{text-align:center; padding:18px 16px 34px; border-top:1px solid var(--border); position:relative; z-index:1;}
+  .footer p{margin:0; color:var(--mutedDim); font-size:11px;}
+
+  /* paywall */
+  .gbtn.locked{opacity:.42;}
+  .lockwrap{position:relative; max-width:920px; margin:0 auto;}
+  .peek{position:relative; max-height:330px; overflow:hidden; filter:blur(5px); opacity:.5; pointer-events:none;
+    -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 28%,transparent 92%);
+    mask-image:linear-gradient(180deg,#000 0%,#000 28%,transparent 92%);}
+  .gate{text-align:center; max-width:560px; margin:-96px auto 0; position:relative; z-index:2; padding:0 18px 14px;}
+  .gate.solo{margin:34px auto 0;}
+  .lockcircle{width:66px; height:66px; border-radius:50%; background:#241a16; border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 16px; box-shadow:0 10px 34px rgba(0,0,0,.55);}
+  .gate h3{margin:0 0 10px; font-family:var(--disp); font-weight:700; font-size:26px; color:var(--cream);}
+  .gate p{margin:0 auto 18px; color:var(--muted); font-size:14px; line-height:1.6; max-width:430px;}
+  .joinbtn{display:inline-block; width:100%; max-width:460px; padding:15px 24px; border:none; cursor:pointer;
+    border-radius:12px; background:linear-gradient(180deg,#f7a83a,#e8870f); color:#2a1500;
+    font-family:var(--disp); font-weight:800; font-size:16px; box-shadow:0 6px 22px rgba(232,135,15,.35); transition:filter .15s;}
+  .joinbtn:hover{filter:brightness(1.06);}
+
+  @media (max-width:520px){ .hero h1{font-size:26px;} .sec h2{font-size:21px;} }
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div class="wrap">
+  <div class="hero">
+    <div class="tex"></div>
+    <div class="in">
+      <p class="eyebrow">FIFA WORLD CUP 2026</p>
+      <h1><span>⚽</span> World Cup Prediction Game</h1>
+      <p class="sub">4 AI models · 12 groups · 48 teams · who lifts the trophy?</p>
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div class="content">
+    <div class="panel" id="panel-0"></div>
+    <div class="panel" id="panel-1"></div>
+    <div class="panel" id="panel-2"></div>
+    <div class="panel" id="panel-3"></div>
+  </div>
+  <div class="footer"><p>Built with Claude · predictions gathered June 2026 · for fun, not betting advice</p></div>
+</div>
+
+<script type="text/plain" id="prompt-src">
+# 🏆 2026 FIFA World Cup — Full Prediction Challenge
+
+**(Copy everything below the line into Claude, ChatGPT, Gemini, and Deepseek — use the exact same text for all four so the comparison is fair.)**
+
+-----
+
+## Your role
+
+You are an elite, evidence-driven football analyst. Today is June 2026 and the FIFA World Cup (co-hosted by the **USA, Canada and Mexico**, 11 June – 19 July 2026) is about to kick off. For the first time the tournament has **48 teams in 12 groups of four**. The top two from each group, plus the **8 best third-placed teams**, advance to the Round of 32.
+
+I want you to run a **rigorous, transparent analysis** and then commit to a definitive predicted finishing order (1st → 4th) for **every group**, plus predict the **champion, runner-up, and third place**. Do not refuse to rank and do not leave ties — make the call.
+
+## The confirmed groups (use these exactly — do not invent your own draw)
+
+- **Group A:** Mexico, South Africa, South Korea, Czechia
+- **Group B:** Canada, Switzerland, Qatar, Bosnia & Herzegovina
+- **Group C:** Brazil, Morocco, Scotland, Haiti
+- **Group D:** United States, Paraguay, Australia, Türkiye
+- **Group E:** Germany, Ecuador, Ivory Coast, Curaçao
+- **Group F:** Netherlands, Japan, Sweden, Tunisia
+- **Group G:** Belgium, Egypt, Iran, New Zealand
+- **Group H:** Spain, Uruguay, Saudi Arabia, Cape Verde
+- **Group I:** France, Senegal, Norway, Iraq
+- **Group J:** Argentina, Austria, Algeria, Jordan
+- **Group K:** Portugal, Colombia, Uzbekistan, DR Congo
+- **Group L:** England, Croatia, Ghana, Panama
+
+-----
+
+## PART 1 — Methodology (REQUIRED, do this first)
+
+Before any rankings, explain **how** you are going to analyse. State the factors you weigh and roughly **how heavily** you weigh each (e.g. percentages or a tiered list). You are free to design your own framework — just make it rigorous and explicit. Reference factors you may use, adapt, or add to:
+
+- **World Cup pedigree & track record** (historical results, knockout experience, "big-tournament" temperament).
+- **Head-to-head history** between the teams in each group.
+- **Host-condition suitability:** summer heat & humidity at venues like Houston, Miami, Dallas, Monterrey; **altitude** in Mexico City, Guadalajara, Toluca; long travel distances across three countries; and partisan home crowds for the USA, Canada and Mexico.
+- **Tactical identity & system** (style of play, pressing, build-up, set-piece strength).
+- **Manager/coach profile** — philosophy, in-tournament adaptability, big-game record.
+- **Current squad quality, depth and cohesion.**
+- **Key players' recent club form, fitness, injuries and suspensions.**
+- **Momentum & qualifying form** heading into the tournament.
+- **Motivation / hunger** (veterans' last dance, redemption arcs, first-timers' ceiling).
+
+State any assumptions and, if you have web access, use the latest squad, injury and form information available as of June 2026.
+
+## PART 2 — Group-by-group predictions (REQUIRED)
+
+For **every** group A–L, give exactly this:
+
+- **Predicted order:** 1st, 2nd, 3rd, 4th
+- **Advancement call:** name the two qualifiers, and judge whether the 3rd-placed team makes the 8 best third-place spots — answer **Yes / Borderline / No**
+- **Rationale (English):** 2–4 sentences explaining the key calls
+- **廣東話點評 (Cantonese comment):** Write in **Traditional Chinese with a Cantonese spoken/colloquial tone** (口語化). Follow this style spec exactly:
+  - Keep it to **1–2 short clauses, max ~25 characters**.
+  - Each comment must justify **both the group winner AND the second-place pick** in one breath.
+  - **Lead with the strongest causal reason** (e.g. 主場優勢 / 紙面實力 / 防守組織 / 大賽經驗), then name who they beat for the spot.
+  - Use colloquial phrasing: 唔同級數, 搏到次名, 拋離成組, 冇懸念, 壓 (instead of 擊敗), etc.
+  - Plain and factual — **no hype, no rhetorical filler, no full sentences**.
+  - Mix in **English football terms** naturally where they read better (e.g. 靠Salah搏次名, Haaland).
+  - Reference **real tactical or contextual factors** (種子隊, 死亡之組, 衛冕, 黑馬底子) rather than generic praise.
+  - *(This field is required.)*
+
+## PART 3 — Knockout & champion (REQUIRED)
+
+Predict the following with a brief line of reasoning for each:
+
+- **Champion** (winner of the final)
+- **Runner-up** (finalist who loses the final)
+- **Third place** (bronze — the losing semi-finalist who wins the 3rd-place match, or if you believe FIFA keeps the 3rd-place match for 2026, the better of the two losing semi-finalists)
+- **Dark horse** — a team outside the traditional top 8 that you think will make a deep run
+
+-----
+
+## OUTPUT FORMAT — please follow exactly
+
+Use this template verbatim so four different models' answers can be compared head-to-head.
+
+```
+## METHODOLOGY
+[Your framework + factor weighting here]
+
+## GROUP PREDICTIONS
+
+### Group A
+1st: [Team]
+2nd: [Team]
+3rd: [Team]  | 3rd-place qualification: [Yes / Borderline / No]
+4th: [Team]
+Rationale (EN): [2–4 sentences]
+廣東話點評: [1–2 clauses, ≤25 chars, colloquial Cantonese per style spec]
+
+### Group B
+... (repeat the same block for every group through Group L)
+
+## KNOCKOUT & CHAMPION
+Champion: [Team] — [reason]
+Runner-up: [Team] — [reason]
+Third place: [Team] — [reason]
+Dark horse: [Team] — [reason]
+```
+
+**Rules recap:** commit to a clear 1–4 order in every group; keep each group block identically structured; the Cantonese comment must follow the style spec (colloquial, ≤25 chars, causal + who-beats-who, no filler); predict champion, runner-up and third place; ground your claims in real, current information.
+</script>
+
+<script>
+/* ===== THEME COLOURS (for JS-built bits) ===== */
+const C = { gold:"#d6b14e", goldSoft:"#e7c66b", goldDim:"#8a7330", green:"#3f9d56",
+  greenBg:"#163a1f", red:"#c0473f", cream:"#f5efe6", muted:"#9a8c80", mutedDim:"#6e635b",
+  bg:"#0e0808", greenBg2:"#163a1f" };
+const AI = {
+  Claude:{c:"#cc7a52"}, ChatGPT:{c:"#19c37d"}, Gemini:{c:"#6b9fff"}, Deepseek:{c:"#b58bff"}
+};
+const models = ["Claude","ChatGPT","Gemini","Deepseek"];
+
+/* ===== FLAGS ===== */
+const FLAG = {
+ "Mexico":"🇲🇽","South Africa":"🇿🇦","South Korea":"🇰🇷","Czechia":"🇨🇿",
+ "Canada":"🇨🇦","Switzerland":"🇨🇭","Qatar":"🇶🇦","Bosnia & Herzegovina":"🇧🇦",
+ "Brazil":"🇧🇷","Morocco":"🇲🇦","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Haiti":"🇭🇹",
+ "United States":"🇺🇸","Paraguay":"🇵🇾","Australia":"🇦🇺","Türkiye":"🇹🇷",
+ "Germany":"🇩🇪","Ecuador":"🇪🇨","Ivory Coast":"🇨🇮","Curaçao":"🇨🇼",
+ "Netherlands":"🇳🇱","Japan":"🇯🇵","Sweden":"🇸🇪","Tunisia":"🇹🇳",
+ "Belgium":"🇧🇪","Egypt":"🇪🇬","Iran":"🇮🇷","New Zealand":"🇳🇿",
+ "Spain":"🇪🇸","Uruguay":"🇺🇾","Saudi Arabia":"🇸🇦","Cape Verde":"🇨🇻",
+ "France":"🇫🇷","Senegal":"🇸🇳","Norway":"🇳🇴","Iraq":"🇮🇶",
+ "Argentina":"🇦🇷","Austria":"🇦🇹","Algeria":"🇩🇿","Jordan":"🇯🇴",
+ "Portugal":"🇵🇹","Colombia":"🇨🇴","Uzbekistan":"🇺🇿","DR Congo":"🇨🇩",
+ "England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Croatia":"🇭🇷","Ghana":"🇬🇭","Panama":"🇵🇦"
+};
+
+const GROUPS = {
+ A:["Mexico","South Africa","South Korea","Czechia"],
+ B:["Canada","Switzerland","Qatar","Bosnia & Herzegovina"],
+ C:["Brazil","Morocco","Scotland","Haiti"],
+ D:["United States","Paraguay","Australia","Türkiye"],
+ E:["Germany","Ecuador","Ivory Coast","Curaçao"],
+ F:["Netherlands","Japan","Sweden","Tunisia"],
+ G:["Belgium","Egypt","Iran","New Zealand"],
+ H:["Spain","Uruguay","Saudi Arabia","Cape Verde"],
+ I:["France","Senegal","Norway","Iraq"],
+ J:["Argentina","Austria","Algeria","Jordan"],
+ K:["Portugal","Colombia","Uzbekistan","DR Congo"],
+ L:["England","Croatia","Ghana","Panama"]
+};
+const groupKeys = Object.keys(GROUPS);
+
+const ORDER = {
+ A:{Claude:["Mexico","South Korea","Czechia","South Africa"],ChatGPT:["Mexico","South Korea","Czechia","South Africa"],Gemini:["Mexico","South Korea","Czechia","South Africa"],Deepseek:["Mexico","South Korea","Czechia","South Africa"]},
+ B:{Claude:["Canada","Switzerland","Bosnia & Herzegovina","Qatar"],ChatGPT:["Switzerland","Canada","Bosnia & Herzegovina","Qatar"],Gemini:["Switzerland","Canada","Bosnia & Herzegovina","Qatar"],Deepseek:["Canada","Switzerland","Qatar","Bosnia & Herzegovina"]},
+ C:{Claude:["Brazil","Morocco","Scotland","Haiti"],ChatGPT:["Brazil","Morocco","Scotland","Haiti"],Gemini:["Brazil","Morocco","Scotland","Haiti"],Deepseek:["Brazil","Morocco","Scotland","Haiti"]},
+ D:{Claude:["United States","Türkiye","Paraguay","Australia"],ChatGPT:["United States","Australia","Paraguay","Türkiye"],Gemini:["United States","Türkiye","Australia","Paraguay"],Deepseek:["United States","Türkiye","Australia","Paraguay"]},
+ E:{Claude:["Germany","Ecuador","Ivory Coast","Curaçao"],ChatGPT:["Germany","Ivory Coast","Ecuador","Curaçao"],Gemini:["Germany","Ecuador","Ivory Coast","Curaçao"],Deepseek:["Germany","Ecuador","Ivory Coast","Curaçao"]},
+ F:{Claude:["Netherlands","Japan","Sweden","Tunisia"],ChatGPT:["Netherlands","Japan","Sweden","Tunisia"],Gemini:["Netherlands","Japan","Sweden","Tunisia"],Deepseek:["Netherlands","Japan","Sweden","Tunisia"]},
+ G:{Claude:["Belgium","Egypt","Iran","New Zealand"],ChatGPT:["Belgium","Iran","Egypt","New Zealand"],Gemini:["Belgium","Egypt","Iran","New Zealand"],Deepseek:["Belgium","Egypt","Iran","New Zealand"]},
+ H:{Claude:["Spain","Uruguay","Saudi Arabia","Cape Verde"],ChatGPT:["Spain","Uruguay","Saudi Arabia","Cape Verde"],Gemini:["Spain","Uruguay","Saudi Arabia","Cape Verde"],Deepseek:["Spain","Uruguay","Saudi Arabia","Cape Verde"]},
+ I:{Claude:["France","Norway","Senegal","Iraq"],ChatGPT:["France","Senegal","Norway","Iraq"],Gemini:["France","Norway","Senegal","Iraq"],Deepseek:["France","Senegal","Norway","Iraq"]},
+ J:{Claude:["Argentina","Austria","Algeria","Jordan"],ChatGPT:["Argentina","Austria","Algeria","Jordan"],Gemini:["Argentina","Austria","Algeria","Jordan"],Deepseek:["Argentina","Austria","Algeria","Jordan"]},
+ K:{Claude:["Portugal","Colombia","DR Congo","Uzbekistan"],ChatGPT:["Portugal","Colombia","Uzbekistan","DR Congo"],Gemini:["Portugal","Colombia","Uzbekistan","DR Congo"],Deepseek:["Portugal","Colombia","Uzbekistan","DR Congo"]},
+ L:{Claude:["England","Croatia","Ghana","Panama"],ChatGPT:["England","Croatia","Ghana","Panama"],Gemini:["England","Croatia","Ghana","Panama"],Deepseek:["England","Croatia","Ghana","Panama"]}
+};
+const THIRD = {
+ A:{Claude:"Borderline",ChatGPT:"Borderline",Gemini:"Borderline",Deepseek:"No"},
+ B:{Claude:"No",ChatGPT:"No",Gemini:"No",Deepseek:"No"},
+ C:{Claude:"Borderline",ChatGPT:"Yes",Gemini:"Borderline",Deepseek:"Yes"},
+ D:{Claude:"Borderline",ChatGPT:"Yes",Gemini:"Borderline",Deepseek:"Yes"},
+ E:{Claude:"Borderline",ChatGPT:"Yes",Gemini:"Yes",Deepseek:"Yes"},
+ F:{Claude:"Borderline",ChatGPT:"Yes",Gemini:"Yes",Deepseek:"Yes"},
+ G:{Claude:"Borderline",ChatGPT:"No",Gemini:"Borderline",Deepseek:"Yes"},
+ H:{Claude:"No",ChatGPT:"Yes",Gemini:"Borderline",Deepseek:"Yes"},
+ I:{Claude:"Yes",ChatGPT:"No",Gemini:"Yes",Deepseek:"Yes"},
+ J:{Claude:"Borderline",ChatGPT:"Yes",Gemini:"Borderline",Deepseek:"Borderline"},
+ K:{Claude:"Borderline",ChatGPT:"No",Gemini:"No",Deepseek:"Borderline"},
+ L:{Claude:"Borderline",ChatGPT:"Yes",Gemini:"Borderline",Deepseek:"Yes"}
+};
+const ZH = {
+ A:{Claude:"墨西哥主場高原波穩頭名，南韓靠Son經驗壓捷克爭次名，南非包尾。",ChatGPT:"主場種子隊墨西哥頭名，南韓組織力壓捷克，Schick搏次名唔成，南非包尾。",Gemini:"墨西哥佔地利頭名，南韓突擊速度壓捷克爭次名，南非包尾。",Deepseek:"墨西哥高原主場節奏冇人跟，頭名；南韓中場逼搶壓老化捷克，次名，南非包尾。"},
+ B:{Claude:"加拿大主場有Davies、David速度頭名，瑞士大賽穩陣壓波斯尼亞次名，卡塔爾包尾。",ChatGPT:"瑞士實力同經驗頭名，加拿大借主場搏次名，波斯尼亞欠班底，卡塔爾包尾。",Gemini:"瑞士大賽最穩頭名，加拿大主場氣勢壓波黑次名，卡塔爾包尾。",Deepseek:"加拿大主場快馬節奏頭名，瑞士三四二一穩陣次名，卡塔爾搏第三，波黑包尾。"},
+ C:{Claude:"巴西人腳厚到爆頭名，摩洛哥防守紮實壓蘇格蘭次名，海地包尾。",ChatGPT:"名門巴西五星頭名，摩洛哥四強班底力壓蘇格蘭次名，Hakimi帶隊，海地包尾。",Gemini:"巴西紙面超班頭名，摩洛哥防守贏蘇格蘭次名，海地包尾。",Deepseek:"巴西深度唔同級數頭名，摩洛哥反擊效率高壓蘇格蘭次名，海地包尾。"},
+ D:{Claude:"美國主場逼搶頭名，土耳其天份最高搏次名，巴拉圭搏第三，澳洲包尾。",ChatGPT:"主場美國頭名，澳洲穩定壓巴拉圭搏次名，土耳其失準包尾。",Gemini:"美國主場氣勢頭名，土耳其技術壓澳洲次名，巴拉圭包尾。",Deepseek:"美國主場體能逼搶頭名，土耳其前場創造力恰死澳洲次名，巴拉圭包尾。"},
+ E:{Claude:"德國中場Wirtz、Musiala拋離頭名，厄瓜多爾防守壓象牙海岸次名，庫拉索包尾。",ChatGPT:"勁旅德國頭名，象牙海岸歐洲班球員壓厄瓜多爾次名，庫拉索包尾。",Gemini:"德國實力拋離頭名，厄瓜多爾體能壓象牙海岸次名，庫拉索包尾。",Deepseek:"德國壓逼系統返晒嚟頭名，厄瓜多爾高原體質防反壓象牙海岸次名，庫拉索包尾。"},
+ F:{Claude:"荷蘭中軸最厚頭名，日本逼搶紀律壓瑞典次名，突尼西亞包尾。",ChatGPT:"名門荷蘭全攻全守頭名，日本組織壓瑞典次名，突尼西亞包尾。",Gemini:"荷蘭防守組織穩頭名，日本機動踢法壓死瑞典次名，突尼西亞包尾。",Deepseek:"荷蘭控球加疊瓦進攻頭名，日本高位壓逼熟到爛壓瑞典次名，突尼西亞包尾。"},
+ G:{Claude:"比利時紙面仲贏頭名，埃及靠Salah壓伊朗次名，新西蘭包尾。",ChatGPT:"實力比利時頭名，伊朗組織穩壓埃及次名，新西蘭包尾。",Gemini:"比利時超班冇懸念頭名，埃及靠Salah搏次名，新西蘭包尾。",Deepseek:"比利時黃金一代尾班車頭名，埃及縮住靠Salah反擊壓伊朗次名，新西蘭包尾。"},
+ H:{Claude:"西班牙歐國盃冠軍唔同級數頭名，烏拉圭班底厚壓沙特次名，佛得角包尾。",ChatGPT:"西甲勁旅西班牙頭名，烏拉圭經驗壓沙特次名，Suárez帶隊，佛得角包尾。",Gemini:"西班牙控傳食住上頭名，烏拉圭喪跑逼死沙特次名，佛得角包尾。",Deepseek:"西班牙控傳DNA刻入骨頭名，烏拉圭老經驗加反擊恰死沙特次名，佛得角包尾。"},
+ I:{Claude:"死亡之組，法國FIFA第一拋離頭名，挪威有Haaland搏次名，伊拉克包尾。",ChatGPT:"名門法國頭名，塞內加爾身體質素壓挪威次名，Haaland爭唔到，伊拉克包尾。",Gemini:"法國陣容贏幾條街頭名，挪威靠Haaland壓塞內加爾次名，伊拉克包尾。",Deepseek:"法國深度可以出兩隊頭名，塞內加爾整體性壓挪威兩個點次名，伊拉克包尾。"},
+ J:{Claude:"阿根廷衛冕、Messi告別之戰頭名，奧地利組織紮實壓阿爾及利亞次名，約旦包尾。",ChatGPT:"冠軍阿根廷頭名，奧地利歐洲經驗壓阿爾及利亞次名，Sabitzer帶隊，約旦包尾。",Gemini:"阿根廷衛冕格食硬頭名，奧地利逼搶壓阿爾及利亞次名，約旦包尾。",Deepseek:"阿根廷默契節奏成熟頭名，奧地利蘭歷克全場逼搶壓阿爾及利亞次名，約旦包尾。"},
+ K:{Claude:"葡萄牙PSG班底加Bruno頭名，哥倫比亞靠Luis Díaz、James壓剛果次名，烏茲別克包尾。",ChatGPT:"勁旅葡萄牙頭名，哥倫比亞態勇靠James壓烏茲別克次名，剛果包尾。",Gemini:"葡萄牙人腳屈機頭名，哥倫比亞攻力壓烏茲別克次名，剛果包尾。",Deepseek:"葡萄牙C朗最後一屆全隊抬轎頭名，哥倫比亞質素秤先壓烏茲別克次名，剛果包尾。"},
+ L:{Claude:"英格蘭人腳深、Bellingham、Kane、Saka拋離頭名，克羅地亞Modrić告別作經驗壓加納次名，巴拿馬包尾。",ChatGPT:"英格蘭球星多頭名，克羅地亞老經驗壓加納次名，Modrić帶隊，巴拿馬包尾。",Gemini:"英格蘭星味拋離頭名，克羅地亞中場智慧壓加納次名，巴拿馬包尾。",Deepseek:"英格蘭深度癡線、進攻鐵三角頭名，克羅地亞Modrić控節奏壓加納次名，巴拿馬包尾。"}
+};
+
+const METHOD = {
+ Claude:{factors:[["Squad quality & depth",25],["Current form & fitness",20],["Host conditions",15],["Pedigree & temperament",15],["Tactics & manager",15],["Head-to-head & motivation",10]],approach:"Evidence-driven with explicit assumptions. Cited real injury reports (Neymar's calf, Yamal's hamstring) and 2026 results (France beat Brazil & Colombia). Most balanced weighting.",note:"6-factor framework, most evenly balanced across the middle tier."},
+ Gemini:{factors:[["Squad quality & depth",35],["WC pedigree & psychology",25],["Host-condition suitability",20],["Tactics & coach",10],["Qualifying form",10]],approach:"Heavily squad- and history-focused. Referenced Ancelotti at Brazil, Tuchel at England. Fewer factors, boldest single-factor weighting.",note:"Highest squad weight (35%) and highest pedigree weight (25%) of all four."},
+ Deepseek:{factors:[["Squad quality & depth",30],["Tactical identity & system",15],["Manager profile",10],["WC pedigree",10],["Momentum & form",10],["Host conditions",10],["Head-to-head",5],["Key player fitness",5],["Motivation",5]],approach:"Most granular. Long tactical rationales (3-4-2-1, 4-3-1-2). Uniquely split manager from tactics. Most generous on 3rd-place qualification.",note:"9 factors — separates manager profile from tactical system."},
+ ChatGPT:{factors:[["Squad quality & depth",20],["Recent form & momentum",15],["WC pedigree",10],["Tactical fit",10],["Manager profile",10],["Key players",10],["Host/venue factors",10],["Travel/logistics",5],["Motivation",5],["Head-to-head",5]],approach:"Research-heavy with source citations (FIFA records, climate studies, injury reports). Included an executive summary and formal source list. Most academic.",note:"Broadest framework (10 factors) — only model with a Travel/logistics factor."}
+};
+
+const KO = {
+ Claude:{champion:"Spain",runnerUp:"France",third:"Argentina",darkHorse:"Morocco"},
+ Gemini:{champion:"France",runnerUp:"England",third:"Argentina",darkHorse:"Norway"},
+ Deepseek:{champion:"France",runnerUp:"Argentina",third:"Spain",darkHorse:"Japan"},
+ ChatGPT:{champion:"Brazil",runnerUp:"France",third:"Argentina",darkHorse:"Netherlands"}
+};
+const KO_REASON = {
+ Claude:{champion:"Deepest, most cohesive squad; heat-proof ball-control identity; Yamal–Pedri–Rodri ceiling.",runnerUp:"FIFA #1 with elite depth; lose a tight final to Spain's midfield control.",third:"Semi-final exit but Messi-driven motivation wins the bronze match.",darkHorse:"2022 semi-final template intact; quarter-final-plus run within range."},
+ Gemini:{champion:"Deepest squad and Mbappé's breakthrough ability; unmatched knockout power.",runnerUp:"Tuchel's discipline; Bellingham & Kane in form; short on final luck.",third:"Messi's last dance still delivers; wins bronze after a narrow semi loss.",darkHorse:"Haaland goals + Ødegaard creativity; capable of a QF run."},
+ Deepseek:{champion:"Unmatched depth, peak Mbappé, multiple tactical plans; decisive late goal in final.",runnerUp:"Messi's last-dance magic carries them to a final; legs fade vs France's bench.",third:"Possession game overwhelms a tiring England 3-1 in the bronze match.",darkHorse:"Wins over Germany & Spain in 2022; mature core; can topple a big name."},
+ ChatGPT:{champion:"Most successful nation (5 titles); very deep squad; favorable route.",runnerUp:"Proven big-tournament side (2 titles, 2022 finalists); reaches the final.",third:"Defending champions fall short of the final but win the consolation match.",darkHorse:"Three finals historically; strong squad; could upset higher seeds."}
+};
+
+const PROMPT_TEXT = (document.getElementById("prompt-src").textContent || "").replace(/^\n+/,"").replace(/\s+$/,"");
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+/* ===== BACKGROUND SVG SCENES (original art, one per tab) ===== */
+const G="#efce78";
+function rays(cx,cy,n,len,inner){let s="";for(let i=0;i<n;i++){const a=(i/n)*Math.PI*2;const x1=cx+Math.cos(a)*inner,y1=cy+Math.sin(a)*inner;const x2=cx+Math.cos(a)*len,y2=cy+Math.sin(a)*len;s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${G}" stroke-width="2"/>`;}return s;}
+function confetti(){let s="";const cols=["#d6b14e","#e7c66b","#cc7a52","#6b9fff","#3f9d56"];for(let i=0;i<60;i++){const x=Math.random()*1200,y=Math.random()*500,w=6+Math.random()*10,h=4+Math.random()*8,r=Math.random()*360,c=cols[i%cols.length];s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}" transform="rotate(${r} ${x} ${y})"/>`;}return s;}
+
+const BG = [
+ /* Tab 0 — Trophy + light */
+ `<svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g opacity="0.30" transform="matrix(1.3 0 0 1.3 -180 -120)">${rays(600,360,40,520,120)}
+   <g transform="translate(600 360)" fill="none" stroke="${G}" stroke-width="9" stroke-linejoin="round">
+     <path d="M -95 -150 q -55 10 -55 -55 q 0 -45 55 -45" />
+     <path d="M 95 -150 q 55 10 55 -55 q 0 -45 -55 -45" />
+     <path d="M -95 -180 q 0 150 95 175 q 95 -25 95 -175 q -10 -25 -190 0 z" />
+     <path d="M 0 -5 v 70" /><path d="M -55 70 q 55 22 110 0" />
+     <rect x="-70" y="70" width="140" height="26" rx="6" />
+     <rect x="-92" y="96" width="184" height="22" rx="6" />
+   </g></g></svg>`,
+ /* Tab 1 — Tactics board / pitch */
+ `<svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g opacity="0.24" transform="matrix(1.2 0 0 1.2 -120 -80)" fill="none" stroke="${G}" stroke-width="3">
+   <rect x="180" y="120" width="840" height="560" rx="6"/>
+   <line x1="600" y1="120" x2="600" y2="680"/><circle cx="600" cy="400" r="86"/>
+   <rect x="180" y="270" width="120" height="260"/><rect x="900" y="270" width="120" height="260"/>
+   <rect x="180" y="340" width="46" height="120"/><rect x="974" y="340" width="46" height="120"/>
+   <g stroke-dasharray="14 12" stroke-width="4">
+     <path d="M 360 560 C 480 460 520 320 690 300"/><path d="M 690 540 C 800 520 840 420 840 320"/>
+   </g>
+   <g fill="${G}" stroke="none"><polygon points="690,288 712,300 690,312"/><polygon points="828,322 852,318 840,340"/></g>
+   <circle cx="360" cy="560" r="13" fill="${G}" stroke="none"/>
+   <g stroke-width="3"><path d="M 470 250 l 24 24 M 494 250 l -24 24"/><circle cx="560" cy="500" r="15"/></g>
+ </g></svg>`,
+ /* Tab 2 — Stadium floodlights + striker silhouette */
+ `<svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g opacity="0.30" transform="matrix(1.3 0 0 1.3 -180 -120)">
+   <g fill="${G}"><polygon points="120,120 200,120 175,800 145,800" opacity="0.5"/>
+     <rect x="95" y="70" width="130" height="60" rx="8"/>
+     <polygon points="225,100 620,300 225,300" opacity="0.10"/></g>
+   <g fill="${G}"><polygon points="1000,120 1080,120 1055,800 1025,800" opacity="0.5"/>
+     <rect x="975" y="70" width="130" height="60" rx="8"/>
+     <polygon points="975,100 580,300 975,300" opacity="0.10"/></g>
+   <g stroke="${G}" stroke-width="3" fill="none" opacity="0.6"><path d="M 0 470 Q 600 410 1200 470"/><path d="M 0 510 Q 600 450 1200 510"/><path d="M 0 550 Q 600 490 1200 550"/></g>
+   <!-- striker -->
+   <g transform="translate(560 470)" stroke="${G}" stroke-width="17" stroke-linecap="round" fill="none">
+     <circle cx="6" cy="-118" r="20" fill="${G}" stroke="none"/>
+     <path d="M 6 -98 L 0 -30"/><path d="M 0 -30 L -40 30"/><path d="M 0 -30 L 52 8"/>
+     <path d="M 4 -86 L -46 -64"/><path d="M 4 -86 L 56 -96"/>
+   </g><circle cx="640" cy="486" r="15" fill="${G}" stroke="none"/>
+ </g></svg>`,
+ /* Tab 3 — Lifting the trophy + confetti */
+ `<svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g opacity="0.34" transform="matrix(1.3 0 0 1.3 -180 -120)">${confetti()}
+   ${rays(600,250,32,300,70)}
+   <g transform="translate(600 250) scale(0.8)" fill="none" stroke="${G}" stroke-width="10" stroke-linejoin="round">
+     <path d="M -70 -70 q -40 8 -40 -40 q 0 -33 40 -33"/><path d="M 70 -70 q 40 8 40 -40 q 0 -33 -40 -33"/>
+     <path d="M -70 -92 q 0 110 70 128 q 70 -18 70 -128 q -8 -18 -140 0 z"/>
+     <path d="M 0 36 v 48"/><rect x="-50" y="84" width="100" height="20" rx="5"/>
+   </g>
+   <!-- celebrant lifting -->
+   <g transform="translate(600 470)" stroke="${G}" stroke-width="18" stroke-linecap="round" fill="none">
+     <circle cx="0" cy="-92" r="22" fill="${G}" stroke="none"/>
+     <path d="M 0 -70 L 0 30"/><path d="M 0 30 L -34 120"/><path d="M 0 30 L 34 120"/>
+     <path d="M 0 -56 L -44 -150"/><path d="M 0 -56 L 44 -150"/>
+   </g></g></svg>`
+];
+
+/* ===== HELPERS ===== */
+function thirdStyle(v){ if(v==="Yes")return{color:C.green,bg:C.greenBg}; if(v==="Borderline")return{color:C.gold,bg:"#3a2c12"}; return{color:C.red,bg:"#3a1614"}; }
+function pill(color,bg,text){ return `<span class="pill" style="color:${color};background:${bg}">${text}</span>`; }
+
+/* ===== RENDER: legend + tabs ===== */
+const TABS=[["The Prompt","📋"],["Methodology","🔬"],["Predictions","⚽"],["Champion","🏆"]];
+document.getElementById("legend").innerHTML = models.map(m=>`<span><i class="dot" style="background:${AI[m].c}"></i>${m}</span>`).join("");
+document.getElementById("tabs").innerHTML = TABS.map((t,i)=>`<button class="tab" id="tab-${i}" onclick="setTab(${i})"><span class="ic">${t[1]}</span>${t[0]}</button>`).join("");
+
+/* ===== RENDER: Prompt ===== */
+function renderPrompt(){
+  return `<div class="maxw-pr">
+   <div class="sec"><p class="eb">Step 1</p><h2>The Universal Prompt</h2><p class="sb">One identical prompt, sent to all four models — the only way to compare them fairly.</p></div>
+   <div class="card" style="padding:26px">
+     <div class="promptbox">${esc(PROMPT_TEXT)}</div>
+     <div class="chips">${models.map(m=>`<div class="chip" style="border:1px solid ${AI[m].c}40"><i class="dot" style="background:${AI[m].c}"></i><span class="nm" style="color:${AI[m].c}">${m}</span></div>`).join("")}</div>
+     <div class="why"><p>⚡ <b>Why it's built this way:</b> identical wording removes prompt bias; a fixed output template lets the four answers line up head-to-head; and the Cantonese comments follow one strict colloquial style so the voice stays consistent across models.</p></div>
+   </div></div>`;
+}
+
+/* ===== RENDER: Methodology ===== */
+function renderMethod(){
+  const cards = models.map(m=>{
+    const d=METHOD[m];
+    const bars=d.factors.map(f=>`<div class="bar"><span class="lbl">${f[0]}</span><div class="track"><div class="fill" style="width:${(f[1]/35)*100}%;background:linear-gradient(90deg,${AI[m].c}66,${AI[m].c})"></div><span class="val">${f[1]}%</span></div></div>`).join("");
+    return `<div class="mcard"><div class="top" style="background:linear-gradient(90deg,${AI[m].c},transparent)"></div>
+      <div class="mhead"><i class="dot" style="background:${AI[m].c}"></i><h3 style="color:${AI[m].c}">${m}</h3>${pill(AI[m].c,AI[m].c+"22",d.factors.length+" FACTORS")}</div>
+      <div class="bars">${bars}</div>
+      <div class="approach"><p><b style="color:${C.cream}">Approach.</b> ${d.approach}</p></div>
+      <p class="note">↳ ${d.note}</p></div>`;
+  }).join("");
+  const glance=[["Boldest single bet","Gemini · squad 35%",AI.Gemini.c],["Most factors","ChatGPT · 10",AI.ChatGPT.c],["Most granular tactics","Deepseek · 9 factors",AI.Deepseek.c],["Most balanced","Claude · 15/15/15",AI.Claude.c]]
+    .map(t=>`<div class="gitem" style="border-left:3px solid ${t[2]}"><p class="k">${t[0]}</p><p class="v">${t[1]}</p></div>`).join("");
+  return `<div class="maxw-me">
+    <div class="sec"><p class="eb">Step 2</p><h2>How Each AI Thinks</h2><p class="sb">Their factor weightings, research depth and analytical philosophy — side by side.</p></div>
+    <div class="mgrid">${cards}</div>
+    <div class="glance"><h3>At a glance</h3><div class="ggrid">${glance}</div></div></div>`;
+}
+
+/* ===== RENDER: Predictions (GATED) ===== */
+function buildGroupBlock(g){
+  const order=ORDER[g], third=THIRD[g];
+  const posLabel=["1ST","2ND","3RD","4TH"], posColor=[C.gold,C.green,"#b08d57",C.mutedDim];
+  const head=`<tr><th class="pos">POS</th>${models.map(m=>`<th style="color:${AI[m].c}">${m}</th>`).join("")}</tr>`;
+  const rows=[0,1,2,3].map(pos=>{
+    const cells=models.map(m=>{
+      const team=order[m][pos]; const cons=models.every(mm=>order[mm][pos]===team);
+      return `<td style="background:${cons?C.greenBg+'55':'transparent'}"><span class="fl">${FLAG[team]}</span>${team}</td>`;
+    }).join("");
+    return `<tr><td class="poscell" style="color:${posColor[pos]}">${posLabel[pos]}</td>${cells}</tr>`;
+  }).join("");
+  const thirdRow=`<tr><td class="thirdlbl">3RD?</td>${models.map(m=>{const s=thirdStyle(third[m]);return `<td>${pill(s.color,s.bg,third[m])}</td>`;}).join("")}</tr>`;
+  const comments=models.map(m=>`<div class="crow" style="border-left:3px solid ${AI[m].c}"><span class="who" style="color:${AI[m].c}">${m}</span><p>${ZH[g][m]}</p></div>`).join("");
+  return `<div class="gblock" id="group-${g}">
+    <div class="ghead"><span class="gbadge">${g}</span><span class="glabel">GROUP ${g}</span><span class="gflags">${GROUPS[g].map(t=>FLAG[t]).join(" ")}</span></div>
+    <div class="tblwrap"><table><thead>${head}</thead><tbody>${rows}${thirdRow}</tbody></table></div>
+    <div class="comments">${comments}</div></div>`;
+}
+function gateHTML(title,sub){
+  return `<div class="lockcircle">🔒</div><h3>${title}</h3><p>${sub}</p><button class="joinbtn" onclick="joinEM()">Join Now</button>`;
+}
+function gotoPaywall(){ const el=document.getElementById("paywall"); if(el) el.scrollIntoView({behavior:"smooth",block:"center"}); }
+function joinEM(){ alert("Welcome to the EM Family! 🎉  This is where your sign-up / subscription flow would go."); }
+const FREE_GROUPS=["I","J","K"];
+function renderPredictions(){
+  const nav=`<div class="gnav">${groupKeys.map(g=> FREE_GROUPS.includes(g)
+    ? `<button class="gbtn" id="gbtn-${g}" onclick="jumpGroup('${g}')">${g}</button>`
+    : `<button class="gbtn locked" onclick="gotoPaywall()" title="Locked — join the EM Family">${g}</button>`).join("")}</div>`;
+  const freeBlocks=FREE_GROUPS.map(buildGroupBlock).join("");
+  const peek=buildGroupBlock("A");
+  return `<div class="maxw-gp">${nav}
+    <div class="sec"><p class="eb">Step 3</p><h2>Head-to-Head Predictions</h2></div>
+    ${freeBlocks}
+    <div class="lockwrap" id="paywall"><div class="peek">${peek}</div><div class="gate">${gateHTML("Join the EM Family","Unlock the full AI group-stage predictions for all 12 groups — every model's head-to-head call and Cantonese read.")}</div></div>
+  </div>`;
+}
+
+/* ===== RENDER: Knockout (GATED) ===== */
+function renderKnockout(){
+  return `<div class="maxw-ko">
+    <div class="sec"><p class="eb">Step 4</p><h2>Who Lifts the Trophy?</h2><p class="sb">Champion, runner-up, third place and dark-horse picks from all four models.</p></div>
+    <div class="gate solo">${gateHTML("Join the EM Family","Get full access to every model's champion, runner-up, third-place and dark-horse predictions.")}</div>
+  </div>`;
+}
+
+/* ===== TAB CONTROL ===== */
+let built=[false,false,false,false];
+const renderers=[renderPrompt,renderMethod,renderPredictions,renderKnockout];
+let activeGroup="A";
+function setTab(i){
+  for(let t=0;t<4;t++){
+    document.getElementById("tab-"+t).classList.toggle("active",t===i);
+    document.getElementById("panel-"+t).classList.toggle("show",t===i);
+  }
+  if(!built[i]){ document.getElementById("panel-"+i).innerHTML=renderers[i](); built[i]=true; if(i===2) setActiveGroup("I"); }
+  document.getElementById("bg").innerHTML=BG[i];
+  window.scrollTo({top:0,behavior:"instant"});
+}
+function setActiveGroup(g){ activeGroup=g; groupKeys.forEach(k=>{const b=document.getElementById("gbtn-"+k); if(b)b.classList.toggle("active",k===g);}); }
+function jumpGroup(g){ setActiveGroup(g); const el=document.getElementById("group-"+g); if(el)el.scrollIntoView({behavior:"smooth",block:"start"}); }
+
+setTab(0); /* open on Prompt */
+</script>
+</body>
+</html>
